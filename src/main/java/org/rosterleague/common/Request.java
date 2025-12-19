@@ -64,4 +64,9 @@ public interface Request {
     void removeTeam(String teamId);
 
     void clearAllEntities();
+
+    void addMatch(MatchDetails matchDetails);
+
+    List<MatchDetails> getMatchesOfTeam(String teamId);
+
 }

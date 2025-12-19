@@ -22,6 +22,16 @@ public class Match implements Serializable {
     private int homeScore;
     private int awayScore;
 
+    public Match() {}
+
+    public Match(String id, Team homeTeam, Team awayTeam, int homeScore, int awayScore) {
+        this.id = id;
+        this.homeTeam = homeTeam;
+        this.awayTeam = awayTeam;
+        this.homeScore = homeScore;
+        this.awayScore = awayScore;
+    }
+
     @Id
     public String getId() {
         return id;
@@ -32,6 +42,7 @@ public class Match implements Serializable {
     }
 
     @ManyToOne
+    @JoinColumn(name = "HOME_TEAM_ID")
     public Team getHomeTeam() {
         return homeTeam;
     }
@@ -41,6 +52,7 @@ public class Match implements Serializable {
     }
 
     @ManyToOne
+    @JoinColumn(name = "AWAY_TEAM_ID")
     public Team getAwayTeam() {
         return awayTeam;
     }

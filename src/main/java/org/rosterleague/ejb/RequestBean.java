@@ -512,9 +512,87 @@ public class RequestBean implements Request, Serializable {
 
     @Override
     public void clearAllEntities() {
+        em.createQuery("DELETE FROM Match").executeUpdate();
         em.createQuery("DELETE FROM Player").executeUpdate();
         em.createQuery("DELETE FROM Team").executeUpdate();
         em.createQuery("DELETE FROM League").executeUpdate();
+    }
+
+    @Override
+    public void addMatch(MatchDetails matchDetails) {
+        logger.info("addMatch");
+
+        try {
+            Team homeTeam = em.find(Team.class, matchDetails.getHomeTeamId());
+            Team awayTeam = em.find(Team.class, matchDetails.getAwayTeamId());
+
+            if (homeTeam == null || awayTeam == null) {
+                throw new EJBException("One of the teams does not exist");
+            }
+
+            if (!homeTeam.getLeague().getId()
+                    .equals(awayTeam.getLeague().getId())) {
+                throw new EJBException("Teams are not in the same league");
+            }
+
+            Match match = new Match(
+                    matchDetails.getId(),
+                    homeTeam,
+                    awayTeam,
+                    matchDetails.getHomeScore(),
+                    matchDetails.getAwayScore()
+            );
+            em.persist(match);
+
+        } catch (Exception ex) {
+            throw new EJBException(ex);
+        }
+    }
+
+
+    @Override
+    public List<MatchDetails> getMatchesOfTeam(String teamId) {
+        logger.info("getMatchesOfTeam");
+
+        List<MatchDetails> matchDetailsList = new ArrayList<>();
+
+        try {
+            CriteriaQuery<Match> cq = cb.createQuery(Match.class);
+
+            if (cq != null) {
+                Root<Match> match = cq.from(Match.class);
+
+                Join<Match, Team> home = match.join("homeTeam");
+                Join<Match, Team> away = match.join("awayTeam");
+
+                Predicate homePredicate = cb.equal(home.get("id"), teamId);
+                Predicate awayPredicate = cb.equal(away.get("id"), teamId);
+
+
+                cq.where(cb.or(homePredicate, awayPredicate));
+                TypedQuery<Match> q = em.createQuery(cq);
+
+                List<Match> matches = q.getResultList();
+
+                for (Match m : matches) {
+                    if (m.getHomeTeam() == null || m.getAwayTeam() == null) {
+                        continue;
+                    }
+
+                    MatchDetails md = new MatchDetails(
+                            m.getId(),
+                            m.getHomeTeam().getName(),
+                            m.getAwayTeam().getName(),
+                            m.getHomeScore(),
+                            m.getAwayScore()
+                    );
+                    matchDetailsList.add(md);
+                }
+            }
+        } catch (Exception ex) {
+            throw new EJBException(ex);
+        }
+        return matchDetailsList;
     }
 
     private List<PlayerDetails> copyPlayersToDetails(List<Player> players) {

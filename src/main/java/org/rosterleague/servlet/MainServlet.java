@@ -6,10 +6,7 @@ import java.util.List;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
-import org.rosterleague.common.LeagueDetails;
-import org.rosterleague.common.PlayerDetails;
-import org.rosterleague.common.Request;
-import org.rosterleague.common.TeamDetails;
+import org.rosterleague.common.*;
 
 @WebServlet(name = "mainServlet", value = "/")
 public class MainServlet extends HttpServlet {
@@ -27,7 +24,72 @@ public class MainServlet extends HttpServlet {
 
         getSomeInfo();
         getMoreInfo();
-        removeInfo();
+        //removeInfo();
+        insertMatches();
+        getMatches();
+    }
+
+    private void insertMatches() {
+        try {
+            // League L1
+            ejbRequest.addMatch(new MatchDetails("M1", "T1", "T2", 2, 1));
+            ejbRequest.addMatch(new MatchDetails("M2", "T2", "T5", 0, 0));
+            ejbRequest.addMatch(new MatchDetails("M3", "T5", "T1", 1, 3));
+
+            // League L2
+            ejbRequest.addMatch(new MatchDetails("M4", "T3", "T4", 88, 91));
+            ejbRequest.addMatch(new MatchDetails("M5", "T4", "T3", 102, 97));
+
+            // League L3
+            ejbRequest.addMatch(new MatchDetails("M6", "T6", "T7", 3, 5));
+            ejbRequest.addMatch(new MatchDetails("M7", "T7", "T8", 2, 2));
+            ejbRequest.addMatch(new MatchDetails("M8", "T8", "T6", 1, 0));
+
+            // League L4
+            ejbRequest.addMatch(new MatchDetails("M9", "T9", "T10", 75, 82));
+            ejbRequest.addMatch(new MatchDetails("M10", "T10", "T9", 90, 88));
+        } catch (Exception ex) {
+            printer.println("Caught an exception: " + ex.getClass() + " : " + ex.getMessage());
+            ex.printStackTrace(printer);
+        }
+    }
+
+    private void getMatches() {
+        try {
+            printer.println("Matches of team T1:");
+            printDetailsList(ejbRequest.getMatchesOfTeam("T1"));
+
+            printer.println("Matches of team T2:");
+            printDetailsList(ejbRequest.getMatchesOfTeam("T2"));
+
+            printer.println("Matches of team T3:");
+            printDetailsList(ejbRequest.getMatchesOfTeam("T3"));
+
+            printer.println("Matches of team T4:");
+            printDetailsList(ejbRequest.getMatchesOfTeam("T4"));
+
+            printer.println("Matches of team T5:");
+            printDetailsList(ejbRequest.getMatchesOfTeam("T5"));
+
+            printer.println("Matches of team T6:");
+            printDetailsList(ejbRequest.getMatchesOfTeam("T6"));
+
+            printer.println("Matches of team T7:");
+            printDetailsList(ejbRequest.getMatchesOfTeam("T7"));
+
+            printer.println("Matches of team T8:");
+            printDetailsList(ejbRequest.getMatchesOfTeam("T8"));
+
+            printer.println("Matches of team T9:");
+            printDetailsList(ejbRequest.getMatchesOfTeam("T9"));
+
+            printer.println("Matches of team T10:");
+            printDetailsList(ejbRequest.getMatchesOfTeam("T10"));
+
+        } catch (Exception ex) {
+            printer.println("Caught an exception: " + ex.getClass() + " : " + ex.getMessage());
+            ex.printStackTrace(printer);
+        }
     }
 
     private void insertInfo() {
