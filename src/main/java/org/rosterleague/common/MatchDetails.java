@@ -3,9 +3,7 @@ package org.rosterleague.common;
 import java.io.Serial;
 import java.io.Serializable;
 
-/**
- * DTO for {@link org.rosterleague.entities.Match}
- */
+
 public class MatchDetails implements Serializable {
     @Serial
     private static final long serialVersionUID = 125141369065843219L;

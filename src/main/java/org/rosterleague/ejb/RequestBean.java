@@ -12,9 +12,7 @@
 package org.rosterleague.ejb;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -549,51 +547,138 @@ public class RequestBean implements Request, Serializable {
         }
     }
 
-
     @Override
     public List<MatchDetails> getMatchesOfTeam(String teamId) {
         logger.info("getMatchesOfTeam");
 
-        List<MatchDetails> matchDetailsList = new ArrayList<>();
+        List<MatchDetails> result = new ArrayList<>();
 
         try {
-            CriteriaQuery<Match> cq = cb.createQuery(Match.class);
+            TypedQuery<Match> query = em.createQuery(
+                    "SELECT m FROM Match m " +
+                            "WHERE m.homeTeam.id = :teamId " +
+                            "OR m.awayTeam.id = :teamId",
+                    Match.class
+            );
+            query.setParameter("teamId", teamId);
 
-            if (cq != null) {
-                Root<Match> match = cq.from(Match.class);
+            List<Match> matches = query.getResultList();
 
-                Join<Match, Team> home = match.join("homeTeam");
-                Join<Match, Team> away = match.join("awayTeam");
-
-                Predicate homePredicate = cb.equal(home.get("id"), teamId);
-                Predicate awayPredicate = cb.equal(away.get("id"), teamId);
-
-
-                cq.where(cb.or(homePredicate, awayPredicate));
-                TypedQuery<Match> q = em.createQuery(cq);
-
-                List<Match> matches = q.getResultList();
-
-                for (Match m : matches) {
-                    if (m.getHomeTeam() == null || m.getAwayTeam() == null) {
-                        continue;
-                    }
-
-                    MatchDetails md = new MatchDetails(
-                            m.getId(),
-                            m.getHomeTeam().getName(),
-                            m.getAwayTeam().getName(),
-                            m.getHomeScore(),
-                            m.getAwayScore()
-                    );
-                    matchDetailsList.add(md);
+            for (Match m : matches) {
+                if (m.getHomeTeam() == null || m.getAwayTeam() == null) {
+                    continue;
                 }
+
+                result.add(new MatchDetails(
+                        m.getId(),
+                        m.getHomeTeam().getId(),
+                        m.getAwayTeam().getId(),
+                        m.getHomeScore(),
+                        m.getAwayScore()
+                ));
             }
+
         } catch (Exception ex) {
             throw new EJBException(ex);
         }
-        return matchDetailsList;
+
+        return result;
     }
+
+    @Override
+    public List<MatchDetails> getMatchesOfLeague(String leagueId) {
+        logger.info("getMatchesOfLeague");
+
+        List<MatchDetails> result = new ArrayList<>();
+
+        try {
+            TypedQuery<Match> query = em.createQuery(
+                    "SELECT m FROM Match m " +
+                            "WHERE m.homeTeam.league.id = :leagueId",
+                    Match.class
+            );
+            query.setParameter("leagueId", leagueId);
+
+            List<Match> matches = query.getResultList();
+
+            for (Match m : matches) {
+                if (m.getHomeTeam() == null || m.getAwayTeam() == null) {
+                    continue;
+                }
+
+                result.add(new MatchDetails(
+                        m.getId(),
+                        m.getHomeTeam().getId(),
+                        m.getAwayTeam().getId(),
+                        m.getHomeScore(),
+                        m.getAwayScore()
+                ));
+            }
+
+        } catch (Exception ex) {
+            throw new EJBException(ex);
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<TeamRankingDetails> getTeamRankingOfLeague(String leagueId) {
+        logger.info("getTeamRankingOfLeague");
+
+        List<TeamRankingDetails> ranking = new ArrayList<>();
+
+        try {
+            League league = em.find(League.class, leagueId);
+            if (league == null) {
+                throw new EJBException("League not found: " + leagueId);
+            }
+
+            for (Team team : league.getTeams()) {
+
+                int points = 0;
+
+                List<MatchDetails> matches = getMatchesOfTeam(team.getId());
+
+                for (MatchDetails m : matches) {
+
+                    if (m.getHomeTeamId().equals(team.getId())) {
+                        if (m.getHomeScore() > m.getAwayScore()) {
+                            points += 3;
+                        } else if (m.getHomeScore() == m.getAwayScore()) {
+                            points += 1;
+                        }
+                    } else {
+                        if (m.getAwayScore() > m.getHomeScore()) {
+                            points += 3;
+                        } else if (m.getAwayScore() == m.getHomeScore()) {
+                            points += 1;
+                        }
+                    }
+                }
+
+                List<PlayerDetails> playerDetails = getPlayersOfTeam(team.getId());
+
+                ranking.add(new TeamRankingDetails(
+                        team.getId(),
+                        team.getName(),
+                        points,
+                        playerDetails
+                ));
+            }
+
+            ranking.sort(
+                    Comparator.comparingInt(TeamRankingDetails::getPoints)
+                            .reversed()
+            );
+
+            return ranking;
+
+        } catch (Exception ex) {
+            throw new EJBException(ex);
+        }
+    }
+
 
     private List<PlayerDetails> copyPlayersToDetails(List<Player> players) {
         List<PlayerDetails> detailsList = new ArrayList<>();

@@ -18,6 +18,7 @@ import java.io.Serializable;
 public class TeamDetails implements Serializable {
     @Serial
     private static final long serialVersionUID = -1618941013515364318L;
+
     private final String id;
     private final String name;
     private final String city;
